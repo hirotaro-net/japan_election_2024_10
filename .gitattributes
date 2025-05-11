@@ -1,0 +1,2 @@
+data/raw/election.zip filter=lfs diff=lfs merge=lfs -text
+data/processed/polygon/senkyoku2022.shp filter=lfs diff=lfs merge=lfs -text
