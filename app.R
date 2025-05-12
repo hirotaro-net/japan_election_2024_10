@@ -1,12 +1,6 @@
-library(shiny)
-library(bslib)
-library(leaflet)
-library(sf)
-library(dplyr)
-library(stringr)
-library(stringi)
-library(readr)
-library(DT)
+# 必要なデータをダウンロードする
+source("./src/download/senkyo.R")
+source("./src/download/election_polygon.R")
 
 # Custom Function ----
 prefList <- c("北海道" = 1,　"青森" = 2,　"岩手" = 3,　"宮城" = 4,　"秋田" = 5,　"山形" = 6,　"福島" = 7,　"茨城" = 8,　"栃木" = 9,　"群馬" = 10,　"埼玉" = 11,　"千葉" = 12,　"東京" = 13,　"神奈川" = 14,　"新潟" = 15,　"富山" = 16,　"石川" = 17,　"福井" = 18,　"山梨" = 19,　"長野" = 20,　"岐阜" = 21,　"静岡" = 22,　"愛知" = 23,　"三重" = 24,　"滋賀" = 25,　"京都" = 26,　"大阪" = 27,　"兵庫" = 28,　"奈良" = 29,　"和歌山" = 30,　"鳥取" = 31,　"島根" = 32,　"岡山" = 33,　"広島" = 34,　"山口" = 35,　"徳島" = 36,　"香川" = 37,　"愛媛" = 38,　"高知" = 39,　"福岡" = 40,　"佐賀" = 41,　"長崎" = 42,　"熊本" = 43,　"大分" = 44,　"宮崎" = 45,　"鹿児島" = 46,　"沖縄" = 47)
@@ -68,28 +62,28 @@ election_polygon <- sf::read_sf(paste(getwd(), "/data/processed/polygon/senkyoku
 
 
 # Define UI ----
-ui <- page_sidebar(
+ui <- bslib::page_sidebar(
     title = "第50回衆議院議員総選挙",
-    sidebar = sidebar(
+    sidebar = bslib::sidebar(
         "フィルター",
-        selectInput(
+        shiny::selectInput(
             "prefCode",
             "都道府県",
             choices = prefList
         ),
-        selectInput(
+        shiny::selectInput(
             "electionArea", 
             "小選挙区", 
             choices = NULL
         )
     ),
-    card(
-        card_header("都道府県内の得票状況"),
-        leafletOutput("map"),
+    bslib::card(
+        bslib::card_header("都道府県内の得票状況"),
+        leaflet::leafletOutput("map"),
         height = "60%"
     ),
-    card(
-        card_header("候補者別得票数"),
+    bslib::card(
+        bslib::card_header("候補者別得票数"),
         DT::DTOutput("table"),
         height = "40%"
     )
@@ -97,13 +91,13 @@ ui <- page_sidebar(
 
 # Define server logic ----
 server <- function(input, output, session) {
-    selected_polygon <- reactive({
+    selected_polygon <- shiny::reactive({
         election_polygon |> 
             dplyr::filter(ken == input$prefCode) |> 
             dplyr::select(-c(UserID, ken, ku, kucode))
     })
     
-    output$map <- renderLeaflet({
+    output$map <- leaflet::renderLeaflet({
         polygon_data <- selected_polygon()
         
         mapview::mapview(
@@ -118,7 +112,7 @@ server <- function(input, output, session) {
         )@map
     })
     
-    selected_table <- reactive({
+    selected_table <- shiny::reactive({
         election_results |> 
             dplyr::filter(pref == input$prefCode) |> 
             dplyr::filter(`小選挙区` == input$electionArea) |> 
@@ -137,9 +131,9 @@ server <- function(input, output, session) {
     })
     
     observeEvent(input$prefCode, {
-        updateSelectInput(session, "electionArea", choices = election_areas())
+        shiny::updateSelectInput(session, "electionArea", choices = election_areas())
     })
 }
 
 # Run the app ----
-shinyApp(ui = ui, server = server)
+shiny::shinyApp(ui = ui, server = server)
